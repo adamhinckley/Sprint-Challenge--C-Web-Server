@@ -49,10 +49,11 @@ urlinfo_t *parse_url(char *url)
   */
 
   path = strchr(hostname, '/');
-  *path = '\0';
   path++;
+  *path = '\0';
   port = strchr(hostname, ':');
-  *port++;
+  port++;
+  *port = "\0";
 
   urlinfo->hostname = hostname;
   urlinfo->port = port;
@@ -77,11 +78,20 @@ int send_request(int fd, char *hostname, char *port, char *path)
   char request[max_request_size];
   int rv;
 
-  ///////////////////
-  // IMPLEMENT ME! //
-  ///////////////////
+  int request_length = sprintf(request, max_request_size,
+                               "GET /%s HTTP/1.1\n"
+                               "Host: %s:%s\n"
+                               "Connection: close\n"
+                               "\n",
+                               path, hostname, port);
 
-  return 0;
+  rv = send(fd, request, strlen(request), 0);
+
+  if (rv < 0)
+  {
+    perror("send");
+  }
+  return rv;
 }
 
 int main(int argc, char *argv[])
@@ -103,7 +113,9 @@ int main(int argc, char *argv[])
     5. Clean up any allocated memory and open file descriptors.
   */
 
-  parse_url(argv[1]);
+  urlinfo_t *urlinfo = parse_url(argv[1]);
+  sockfd = get_socket(urlinfo->hostname, urlinfo->port);
+  send_request(sockfd, urlinfo->hostname, urlinfo->port, urlinfo->path);
 
   return 0;
 }
